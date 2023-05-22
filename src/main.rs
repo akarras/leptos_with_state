@@ -7,10 +7,16 @@ use std::sync::Arc;
 struct State {
     leptos_options: Arc<LeptosOptions>,
 }
+#[cfg(feature = "ssr")]
+impl leptos_axum::LeptosOptionProvider for State {
+    fn options(&self) -> LeptosOptions {
+        (*self.leptos_options).clone()
+    }
+}
 
 #[tokio::main]
 async fn main() {
-    use axum::{extract::Extension, routing::post, Router};
+    use axum::{routing::post, Router};
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use start_axum::app::*;
@@ -38,7 +44,7 @@ async fn main() {
         .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
         // leptos_routes seems to take us from a Router<S> to a Router<()>,
         // i.e. force S = ()?
-        .leptos_routes(leptos_options.clone(), routes, |cx| view! { cx, <App/> })
+        .leptos_routes(state.clone(), routes, |cx| view! { cx, <App/> })
         .fallback(file_and_error_handler)
         .with_state(state);
 
